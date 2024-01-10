@@ -1,0 +1,16 @@
+# NOTES
+
+ExtremeBB: forums and apps
+- the dataset must be formally requested
+- the data scrapers are available upon request (cf. ExtremeBB 
+- has build a platform for less tech-savvy researchers
+- uses CrimeBot implemented in Python and Bash, using Selenium to fetch and store HTML, and XPath to scrape content. postgesqul with encrypted filesystem running on FreeBSD.
+- Richard Clayton and Tina Marjanov are acknowledged for maintaining the data scrapers' infrastructure (cf. ExtremeBB: A Database for Large-Scale Research into Online Hate, Harassment, the Manosphere and Extremism - by Ross Anderson and Anh V. Vu etal.)
+
+Program on Extremism (Alexander etal 2017): twitter
+- uses Elastic stack to make data searchable
+- freely available twitter scraper called Social Feed Manager SFM
+
+Gaikwad etal 2023 online extremism dataset ML
+- uses open source datasets with ML e.g. support vector machine
+- Kaggle ISIS, StormFront Dataset, Gab dataset, and Twitter
