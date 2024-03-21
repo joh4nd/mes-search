@@ -7,12 +7,23 @@ services:
     build:
       context: . # really only needs es.Dockerfile
       dockerfile: es.Dockerfile
-    # container_name: elasticsearch
-    ports:
-      - "127.0.0.1:9200:9200" # runs on http://localhost:9200
+    #ports: # for accessing outside container
+    #  - "127.0.0.1:9200:9200" # runs on http://localhost:9200
+    networks:
+      default:
+        ipv4_address: 172.19.0.3
+
 
   py-peline:
     image: py-peline:0.1.1
     build:
       context: . # needs app/ data/ and py.Dockerfile
       dockerfile: py.Dockerfile
+    ports:
+      - "127.0.0.1:8888:8888" # jupyter runs on http://localhost:8888
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16

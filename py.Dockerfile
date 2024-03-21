@@ -3,11 +3,11 @@ FROM python:3.12.2
 
 WORKDIR /app
 
-COPY search.py app/src/search.py
-COPY data app/data/
+COPY src/es_client.py src/es_client.py
+COPY search-index.ipynb search-index.ipynb
+COPY data data/
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
-# CMD python search.py
-CMD ["bash", "-c", "echo hello && exec bash"]
+CMD jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --no-browser && echo Jupyter Notebook token: $(jupyter notebook list | grep -Po 'token=\K\S+')
