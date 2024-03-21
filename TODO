@@ -1,10 +1,5 @@
 # PLAN / TODO LIST
 
-
-- compose two services (with network and volume or mount point?)
-	1) ES
-	2) python
-- python must access data. volume (not bind mount)
-- find out how to connect to ES from python
+- find out how to load data into ES from python
 - figure out whether to develop python ML vectorization or let ES do it
-- 
+- reconsider whether data should be mounted as a volume rather than copied

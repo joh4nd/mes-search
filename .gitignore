@@ -1,3 +1,5 @@
 science/
 .zip
 data/tweets.xlsx
+search-host.py
+data-to-index.py

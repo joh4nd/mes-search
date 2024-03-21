@@ -1,19 +1,13 @@
 
-FROM python:latest
+FROM python:3.12.2
 
-COPY search.py app/src/search.py/
+WORKDIR /app
+
+COPY search.py app/src/search.py
 COPY data app/data/
 
-# executed at build-time
-RUN pip install elasticsearch
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
-# https://docs.docker.com/engine/reference/builder/#run
-# shell form
-RUN echo "hello from build-time py.dockerfile"
-# exec form
-RUN ["echo", "hello from build-time py.dockerfile"]
-
-# executed at run-time
-#CMD echo "hello from run-time py.dockerfile"
 # CMD python search.py
 CMD ["bash", "-c", "echo hello && exec bash"]

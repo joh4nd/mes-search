@@ -3,22 +3,16 @@ version: '3'
 
 services:
   es-client:
-    image: es-client:1.6
+    image: es-client:0.1.1
     build:
       context: . # really only needs es.Dockerfile
       dockerfile: es.Dockerfile
     # container_name: elasticsearch
     ports:
       - "127.0.0.1:9200:9200" # runs on http://localhost:9200
-    #tty: true
-    #command: ["sh", "-c", "elasticsearch & echo 'ES run!'"]
 
   py-peline:
-    image: py-peline:1.8 # call it vs1
+    image: py-peline:0.1.1
     build:
       context: . # needs app/ data/ and py.Dockerfile
       dockerfile: py.Dockerfile
-    tty: true
-    stdin_open: true
-    # command: python search.py
-    #command: echo "py-peline runs!"

@@ -1,8 +1,4 @@
-# run ES in Docker
 # https://www.elastic.co/search-labs/tutorials/install-elasticsearch/docker
-# modified, see docker-compose
-
-# docker.elastic.co/elasticsearch/elasticsearch:8.11.0
 FROM elasticsearch:8.11.0
 
 ENV discovery.type=single-node

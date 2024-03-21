@@ -1,17 +1,11 @@
 # message search
 
-Enable vector search of isis messages. The targetted scope is ExtremeBB @ Cambridge Uni CS Dept Cybercrime Centre.
+Enable analysts to search political communication by looking up expressions whose underlying vectors share similarities (while e.g. possibly spelled differently).
 
-## Kaggle isis-twitter-data
+A priority of the application areas from simple to more involved:
+- isis tweets (freely available)
+- messages from a Telegram crawler by cybersecurity PhD Edoardo Gabrielli (requires computation)
+- forum exchanges in ExtremeBB by Cambridge Uni CS Dept Cybercrime Centre (requires uni position)
+- ...
 
-Download the data from Kaggle https://www.kaggle.com/datasets/fifthtribe/how-isis-uses-twitter or with an API key https://www.kaggle.com/docs/api
-
-```python
-# Set Kaggle API credentials
-os.environ['KAGGLE_USERNAME'] = 'your_kaggle_username'
-os.environ['KAGGLE_KEY'] = 'your_kaggle_api_key'
-
-# Download data from Kaggle
-!kaggle datasets download -d dataset_name # requires kaggle cli
-!unzip dataset_name.zip -d data
-```
+See [get-data](/data/get-data.md) on how to retrieve the data.
