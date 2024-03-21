@@ -1,8 +1,8 @@
 
 FROM python:latest
 
-COPY search.py search.py/
-COPY data data/
+COPY search.py app/src/search.py/
+COPY data app/data/
 
 # executed at build-time
 RUN pip install elasticsearch
@@ -14,5 +14,6 @@ RUN echo "hello from build-time py.dockerfile"
 RUN ["echo", "hello from build-time py.dockerfile"]
 
 # executed at run-time
-CMD echo "hello from run-time py.dockerfile"
+#CMD echo "hello from run-time py.dockerfile"
 # CMD python search.py
+CMD ["bash", "-c", "echo hello && exec bash"]
