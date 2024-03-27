@@ -10,4 +10,4 @@ COPY data data/
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && rm requirements.txt
 
-CMD jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --no-browser && echo Jupyter Notebook token: $(jupyter notebook list | grep -Po 'token=\K\S+')
+CMD jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --no-browser
