@@ -1,6 +1,6 @@
 
-FROM python:3.12-slim-bookworm
-# considerably smaller than 'jupyter:minimal-notebook'
+# jupyter:minimal-notebook
+FROM python:3.12.2
 
 WORKDIR /app
 

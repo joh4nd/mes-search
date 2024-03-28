@@ -1,5 +1,6 @@
 # PLAN / TODO LIST
 
 - find out how to load data into ES from python
+- branch out notebook from pipeline then merge
 - figure out whether to develop python ML vectorization or let ES do it
 - reconsider whether data should be mounted as a volume rather than copied
