@@ -7,8 +7,9 @@ services:
     build:
       context: . # really only needs es.Dockerfile
       dockerfile: es.Dockerfile
-    #ports: # for accessing outside container
-    #  - "127.0.0.1:9200:9200" # runs on http://localhost:9200
+  # image: name:tag
+    ports:
+    - "127.0.0.1:9200:9200"
     networks:
       default:
         ipv4_address: 172.19.0.3
@@ -19,8 +20,19 @@ services:
     build:
       context: . # needs app/ data/ and py.Dockerfile
       dockerfile: py.Dockerfile
+  # image: name:tag
     ports:
-      - "127.0.0.1:8888:8888" # jupyter runs on http://localhost:8888
+      - "127.0.0.1:8888:8888"
+
+
+# TODO: branch out notebook from pipeline
+  # notebook:
+  #   image: notebook:0.1.1
+  #   build:
+  #     context: . 
+  #     dockerfile: jn.Dockerfile
+  # # image: name:tag
+
 
 networks:
   default:

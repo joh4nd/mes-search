@@ -1,5 +1,6 @@
 
-FROM python:3.12-slim-bookworm
+# jupyter:minimal-notebook
+FROM python:3.12.2
 
 WORKDIR /app
 
