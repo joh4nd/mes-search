@@ -3,3 +3,4 @@ science/
 data/tweets.xlsx
 search-host.py
 data-to-index.py
+__pycache__
