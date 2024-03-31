@@ -9,9 +9,6 @@ services:
       dockerfile: es.Dockerfile
     ports:
     - "127.0.0.1:9200:9200"
-    # networks:
-    #   default:
-    #     ipv4_address: 172.19.0.3
     healthcheck: # https://docs.docker.com/compose/compose-file/05-services/#healthcheck
       test: curl -s http://host.docker.internal:9200 >/dev/null || exit 1
       interval: 10s
@@ -21,17 +18,17 @@ services:
       # start_interval: 10s
 
 
-  # py-peline:
-  #   image: py-peline:0.1.1
-  #   build:
-  #     context: . 
-  #     dockerfile: py.Dockerfile
-  #   ports:
-  #     - "127.0.0.1:8888:8888"
-  #   volumes:
-  #     - type: bind
-  #       source: ./src/pipeline
-  #       target: /app/src/pipeline
+  py-peline:
+    image: py-peline:0.1.1
+    build:
+      context: . 
+      dockerfile: py.Dockerfile
+    ports:
+      - "127.0.0.1:8888:8888"
+    volumes:
+      - type: bind
+        source: ./src/pipeline
+        target: /app/src/pipeline
 
 
 
@@ -50,10 +47,3 @@ services:
        - type: bind
          source: ./src
          target: /app/src
-
-
-# networks:
-#   default:
-#     ipam:
-#       config:
-#         - subnet: 172.19.0.0/16
