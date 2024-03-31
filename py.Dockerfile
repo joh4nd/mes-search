@@ -3,8 +3,6 @@ FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
-COPY src/es_client.py src/es_client.py
-COPY search-index.ipynb search-index.ipynb
 COPY data data/
 
 COPY requirements.txt .
