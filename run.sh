@@ -1,54 +1,71 @@
 #!/bin/bash
 
-docker compose up -d
+# $ docker build -t py-peline:0.1.1 -f py.Dockerfile .
+# $ docker run -d -p 8888:8888 --name mes-search-py-peline py-peline:0.1.1
 
-# $ docker build -t test -f py.Dockerfile .
+# $ docker build -t es-client:0.1.1 -f es.Dockerfile .
+# $ docker run -d -p 8888:8888 --name mes-search-es-client-1 es-client:0.1.1
 
-# $ docker run -d -p 8888:8888 --name testcontainer test
+# $ docker build -t flask:0.1.1 -f fl.Dockerfile .
+# $ docker run -it -p 5001:5001 --name mes-search-gui-search-1 flask:0.1.1
 
-echo
+# set -x
 
-dock_jcontainer="$(docker container ls | awk '{if(NR>1) print $NF}' | grep py)"
+my_command="docker compose up -d"
 
-while true; do
-    if docker logs $dock_jcontainer 2>&1 | grep -q "To access the server"; then
-        dock_jlogs="$(docker logs $dock_jcontainer 2>&1)"
-        break
-    fi
-done
+if [[ "$1" == "--build" ]]; then
+    my_command="docker compose up -d --build"
+    $my_command
+elif [[ "$1" == "down" ]]; then
+    my_command="docker compose down"
+    $my_command
+    exit 0
+else
+    $my_command
+fi
 
-dock_URL="$(grep -P 'http:\/\/127.0.0.1:8888\/tree\?token=[^\s]+$' <<< $dock_jlogs | awk 'NR==2 {print $1}')"
+# given a python container name find the jupyter notebook URL
+if docker container ls | awk '{if(NR>1) print $NF}' | grep py; then
+    dock_jcontainer="$(docker container ls | awk '{if(NR>1) print $NF}' | grep py)"
 
-dock_URLjn="$(echo $dock_URL | sed 's/\/tree/\/notebooks\/search-index.ipynb/')"
+    until [ $(docker logs $dock_jcontainer 2>&1 | grep "To access the server") ]; do
+        echo waiting for Jupyter...
+        sleep 2            
+    done
 
-my_message() {
-    echo "$1 is about to open in the browser. Attempt number $2"
+    dock_jlogs="$(docker logs $dock_jcontainer 2>&1)"
+
+    dock_URL="$(grep -P 'http:\/\/127.0.0.1:8888\/tree\?token=[^\s]+$' <<< $dock_jlogs | awk 'NR==2 {print $1}')"
+
+    dock_URLjn="$(echo $dock_URL | sed 's/\/tree/\/notebooks\/search-index.ipynb/')"
+else
+    echo No Jupyter container...
+fi
+
+my_open_services() {
+
+    url=$1
+    name=$2
+    my_counter=0
+
+    until curl -s $url >/dev/null; do
+        ((my_counter++))
+        echo $name is about to open in the browser. Attempt number $my_counter $2
+        sleep 5
+    done
+
+    echo $name will open in the browser!
+    xdg-open $url
 }
 
-my_counter=0
+my_open_services http://127.0.0.1:9200/ Elasticsearch
 
-while true; do
-    curl -s $dock_URLjn >/dev/null
-    if [ $? -eq 0 ]; then
-        xdg-open $dock_URLjn
-        break
-    else
-        ((my_counter++))
-        my_message "Jupyter Notebook" $my_counter
-        sleep 5
-    fi
-done
+my_open_services http://127.0.0.1:5001/ search-GUI
 
-my_counter=0
+if [ -z $dock_URLjn ]; then
+    exit 0
+else
+    my_open_services $dock_URLjn "Jupyter Notebook"
+fi
 
-while true; do
-    curl -s http://127.0.0.1:9200/ >/dev/null
-    if [ $? -eq 0 ]; then
-        xdg-open http://127.0.0.1:9200/
-        break
-    else
-        ((my_counter++))
-        my_message "Elasticsearch" $my_counter
-        sleep 5
-    fi
-done
+exit 0
