@@ -1,6 +1,7 @@
 science/
-.zip
-data/tweets.xlsx
+*.zip
 search-host.py
 data-to-index.py
 __pycache__
+tweets.csv
+

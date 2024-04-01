@@ -28,7 +28,7 @@ fi
 if docker container ls | awk '{if(NR>1) print $NF}' | grep py; then
     dock_jcontainer="$(docker container ls | awk '{if(NR>1) print $NF}' | grep py)"
 
-    until [ $(docker logs $dock_jcontainer 2>&1 | grep "To access the server") ]; do
+    until $(docker logs $dock_jcontainer 2>&1 | grep "To access the server"); do
         echo waiting for Jupyter...
         sleep 2            
     done
