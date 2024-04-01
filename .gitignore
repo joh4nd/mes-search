@@ -4,4 +4,5 @@ search-host.py
 data-to-index.py
 __pycache__
 tweets.csv
-
+*.ipynb_checkpoints
+flask_session

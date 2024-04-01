@@ -25,19 +25,19 @@ else
 fi
 
 # given a python container name find the jupyter notebook URL
-if docker container ls | awk '{if(NR>1) print $NF}' | grep py; then
+if docker container ls | awk '{if(NR>1) print $NF}' | grep -q py; then
     dock_jcontainer="$(docker container ls | awk '{if(NR>1) print $NF}' | grep py)"
 
-    until $(docker logs $dock_jcontainer 2>&1 | grep "To access the server"); do
+    until $(docker logs $dock_jcontainer 2>&1 | grep -q "To access the server"); do
         echo waiting for Jupyter...
-        sleep 2            
+        sleep 5         
     done
 
     dock_jlogs="$(docker logs $dock_jcontainer 2>&1)"
 
     dock_URL="$(grep -P 'http:\/\/127.0.0.1:8888\/tree\?token=[^\s]+$' <<< $dock_jlogs | awk 'NR==2 {print $1}')"
 
-    dock_URLjn="$(echo $dock_URL | sed 's/\/tree/\/notebooks\/search-index.ipynb/')"
+    dock_URLjn="$(echo $dock_URL | sed 's/\/tree/\/notebooks\/src\/pipeline\/search-index.ipynb/')"
 else
     echo No Jupyter container...
 fi

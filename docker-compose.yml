@@ -33,7 +33,7 @@ services:
 
 
   gui-search:
-    image: flask:0.1.1
+    image: gui-search:0.1.1
     build:
       context: .
       dockerfile: fl.Dockerfile

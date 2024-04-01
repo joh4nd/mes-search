@@ -2,3 +2,6 @@ Notes
 README.md
 *Dockerfile
 *.zip
+__pycache__
+*.ipynb_checkpoints
+flask_session
