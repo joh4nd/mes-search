@@ -19,9 +19,24 @@ def index():
 
 @app.post('/')
 def handle_search():
+    """query docs attributes based on index"""
+    
     query = request.form.get('query', '')
-    return render_template(
-        'index.html', query=query, results=[], from_=0, total=0)
+
+    indexname = list(es.es.indices.get_alias(index="*").keys())[0]
+    if indexname == "isis_docs":
+        doctype = 'tweets'
+    elif indexname == "documents":
+        doctype = 'name'
+    else:
+        pass
+
+    results = es.search(query={'match': {doctype: {'query': query}}})
+    return render_template('index.html',
+                           results = results['hits']['hits'],
+                           query = query,
+                           from_= 0,
+                           total = results['hits']['total']['value'])
 
 
 @app.get('/document/<id>')

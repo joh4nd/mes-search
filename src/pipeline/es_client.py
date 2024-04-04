@@ -34,15 +34,18 @@ class Search:
 
     def create_index(self, indexname=None):
         """
-        Deletes and recreates my_index
+        Deletes and recreates an index
 
-        my_index is the only index
+        There will be only one index
 
         ref: https://elasticsearch-py.readthedocs.io/en/stable/api/indices.html#indices
         """
-
+        
         # while dev
-        self.es.indices.delete(index=indexname, ignore_unavailable=True)
+        clsettings = {"persistent": {"action.destructive_requires_name": False}} # https://www.elastic.co/guide/en/elasticsearch/reference/current/index-management-settings.html#action.destructive_requires_name
+        self.es.cluster.put_settings(body=clsettings)
+        self.es.indices.delete(index="_all", ignore_unavailable=True) # https://elasticsearch-py.readthedocs.io/en/stable/api/indices.html#elasticsearch.client.IndicesClient.delete
+        #self.es.indices.delete(index=indexname, ignore_unavailable=True)
         self.es.indices.create(index=indexname)
         
         self.es.indices.exists(index=indexname, pretty=True, human=True)
@@ -86,3 +89,13 @@ class Search:
     # @app.cli.command()
     # def reindex():
     #     pass
+
+    def search(self, **query_args):
+        """Search the only available index"""
+        
+        # not necessary to specify the index
+        #indexname = list(self.es.indices.get_alias(index="*").keys())[0]
+        #return self.es.search(index=indexname, **query_args)
+
+        return self.es.search(**query_args)
+    
