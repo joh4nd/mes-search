@@ -2,6 +2,7 @@ import re
 from flask import Flask, render_template, request, session
 from flask_session import Session # https://pypi.org/project/Flask-Session/
 from pipeline.es_client import Search
+import re
 
 es = Search()
 
@@ -20,7 +21,7 @@ def index():
 @app.post('/')
 def handle_search():
     """query docs attributes based on index"""
-    
+
     query = request.form.get('query', '')
 
     indexname = list(es.es.indices.get_alias(index="*").keys())[0]
@@ -31,14 +32,49 @@ def handle_search():
     else:
         pass
 
-    results = es.search(query={'match': {doctype: {'query': query}}})
+    res = es.search(query={'match': {doctype: {'query': query}}})
     return render_template('index.html',
-                           results = results['hits']['hits'],
+                           results = res['hits']['hits'],
                            query = query,
                            from_= 0,
-                           total = results['hits']['total']['value'])
+                           total = res['hits']['total']['value'])
 
 
-@app.get('/document/<id>')
-def get_document(id):
-    return 'Document not found'
+@app.get('/message/<id>')
+def get_message(id):
+    """Retrieves the messages"""
+
+    res = es.retrieve_message(id)["_source"]
+    
+
+    #TODO make msg class to do this better...
+    username = res['username']
+    # msg = res['tweets'].split('\n')
+    URLs = extract_urls(res['tweets'])
+    if URLs:
+        msg = remove_urls(res['tweets'], URLs)
+    else:
+        msg = res['tweets']
+
+    return render_template('message.html', username=username, msg=msg, URLs=URLs)
+
+
+def extract_urls(msg):
+    """extract URLs from messages."""
+
+    url_pattern = r'https?://\S+'
+    
+    urls = re.findall(url_pattern, msg)
+
+    return urls
+
+def remove_urls(msg, urls):
+    """remove URLs from msgbodies"""
+
+    msg_worker = msg
+
+    for url in urls:
+        msg_clean = re.sub(re.escape(url), '', msg_worker)
+        msg_worker = msg_clean
+
+    return msg_clean

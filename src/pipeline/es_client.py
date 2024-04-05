@@ -99,3 +99,8 @@ class Search:
 
         return self.es.search(**query_args)
     
+    def retrieve_message(self, id):
+
+        indexname = list(self.es.indices.get_alias(index="*").keys())[0]
+
+        return self.es.get(index=indexname, id=id)

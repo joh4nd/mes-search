@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p><a href="javascript:history.back(1)" class="btn btn-primary">← Back</a></p>
+
+    <h5 style="line-height: 2;text-align: center;">@{{ username }}</h5>
+
+    <div class="indented-section">
+    <p>{{ msg }}</p>
+    </div>
+
+    <h6 style="line-height: 2;text-align: center;margin-top: 40px;">Embedded URLs</h6>
+
+    <ul>
+    {% for URL in URLs %}
+        <li>{{ URL }}</li>
+    {% endfor %}
+    </ul>
+
+{% endblock %}
