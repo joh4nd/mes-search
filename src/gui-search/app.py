@@ -23,6 +23,7 @@ def handle_search():
     """query docs attributes based on index"""
 
     query = request.form.get('query', '')
+    from_ = request.form.get('from_', type=int, default=0)
 
     indexname = list(es.es.indices.get_alias(index="*").keys())[0]
     if indexname == "isis_docs":
@@ -32,11 +33,13 @@ def handle_search():
     else:
         pass
 
-    res = es.search(query={'match': {doctype: {'query': query}}})
+    res = es.search(query={'match': {doctype: {'query': query}}},
+                    size=5, from_=from_)
+    
     return render_template('index.html',
                            results = res['hits']['hits'],
                            query = query,
-                           from_= 0,
+                           from_= from_,
                            total = res['hits']['total']['value'])
 
 
