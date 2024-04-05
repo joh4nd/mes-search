@@ -2,6 +2,5 @@ science/
 *.zip
 search-host.py
 __pycache__
-tweets.csv
 *.ipynb_checkpoints
 flask_session

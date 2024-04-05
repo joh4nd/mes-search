@@ -3,7 +3,7 @@ version: '3'
 
 services:
   es-client:
-    image: es-client:0.1.1
+    image: es-client:1.0.0
     build:
       context: .
       dockerfile: es.Dockerfile
@@ -12,27 +12,33 @@ services:
 
 
   py-peline:
-    image: py-peline:0.1.1
+    image: py-peline:1.0.0
     build:
       context: . 
       dockerfile: py.Dockerfile
-    ports:
-      - "127.0.0.1:8888:8888"
+    # ports:
+    #   - "127.0.0.1:8888:8888"
     volumes:
       - type: bind
         source: ./src/pipeline
         target: /app/src/pipeline
+    depends_on:
+     - es-client
 
 
 
   gui-search:
-    image: gui-search:0.1.1
+    image: gui-search:1.0.0
     build:
       context: .
       dockerfile: fl.Dockerfile
     ports:
-      - "127.0.0.1:5001:5001"
+      - "127.0.0.1:5000:5000"
     volumes:
        - type: bind
          source: ./src
          target: /app/src
+    depends_on:
+     - es-client
+     - py-peline
+
