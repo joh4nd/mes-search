@@ -20,7 +20,16 @@ def index():
 
 @app.post('/')
 def handle_search():
-    """query docs attributes based on index"""
+    """
+    Query docs attributes based on index.
+
+    For combined semantic/vector and full-text search
+
+    Refs:
+    - https://www.elastic.co/search-labs/tutorials/search-tutorial/semantic-search/semantic-search
+    - https://www.elastic.co/search-labs/tutorials/search-tutorial/semantic-search/hybrid-search
+    - https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/hybrid-search
+    """
 
     query = request.form.get('query', '')
     from_ = request.form.get('from_', type=int, default=0)
@@ -33,7 +42,16 @@ def handle_search():
     else:
         pass
 
-    res = es.search(query={'match': {doctype: {'query': query}}},
+    # combined search
+    search_query = {'sub_searches': [
+                {'query': {'match': {doctype: {'query': query}}}}, # full-text
+                {'query': {'text_expansion': {'elser_embedding': {
+                                            'model_id': '.elser_model_2', # see es.deploy_elser()
+                                            'model_text': query}}}} # vector
+                                    ],
+                'rank': {'rrf': {}}} # combine
+
+    res = es.search(**search_query,
                     size=5, from_=from_)
     
     return render_template('index.html',

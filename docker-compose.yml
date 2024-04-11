@@ -1,6 +1,3 @@
-version: '3'
-
-
 services:
   es-client:
     image: es-client:1.0.0

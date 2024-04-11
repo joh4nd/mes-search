@@ -6,13 +6,13 @@ my_command="docker compose up -d"
 
 if [[ "$1" == "--build" ]]; then
     my_command="docker compose up -d --build"
-    $my_command
+    $my_command || exit 1
 elif [[ "$1" == "down" ]]; then
     my_command="docker compose down"
     $my_command
     exit 0
 else
-    $my_command
+    $my_command || exit 1
 fi
 
 # given a container running jupyter find the notebook URL

@@ -41,15 +41,22 @@ class Search:
         ref: https://elasticsearch-py.readthedocs.io/en/stable/api/indices.html#indices
         """
         
-        # while dev
-        clsettings = {"persistent": {"action.destructive_requires_name": False}} # https://www.elastic.co/guide/en/elasticsearch/reference/current/index-management-settings.html#action.destructive_requires_name
-        self.es.cluster.put_settings(body=clsettings)
-        self.es.indices.delete(index="_all", ignore_unavailable=True) # https://elasticsearch-py.readthedocs.io/en/stable/api/indices.html#elasticsearch.client.IndicesClient.delete
-        #self.es.indices.delete(index=indexname, ignore_unavailable=True)
-        self.es.indices.create(index=indexname)
+        # while dev: delete and create
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/index-management-settings.html#action.destructive_requires_name
+        clsettings = {"persistent": {"action.destructive_requires_name": False}} 
+        self.es.cluster.put_settings(body = clsettings)
+
+        # https://elasticsearch-py.readthedocs.io/en/stable/api/indices.html#elasticsearch.client.IndicesClient.delete
+        self.es.indices.delete(index = "_all", ignore_unavailable = True)
         
+        # https://www.elastic.co/search-labs/tutorials/search-tutorial/semantic-search/elser-model
+        self.es.indices.create(index = indexname, mappings = {
+            'properties': {'embedding': {'type': 'dense_vector'}, # vector
+                           'elser_embedding': {'type': 'sparse_vector'}}}, # semantic
+                           settings = {'index': {'default_pipeline': 'elster-ingest-pipeline'}}) # see deploy_elser()
+                
         self.es.indices.exists(index=indexname, pretty=True, human=True)
-        logging.info('Recreated my_index!')
+        logging.info(f'Recreated {indexname}!')
     
     def add_documents(self, json_docs=None):
         """
@@ -86,21 +93,78 @@ class Search:
             operations.append(doc)        
         return self.es.bulk(operations=operations)
 
-    # @app.cli.command()
-    # def reindex():
-    #     pass
-
     def search(self, **query_args):
-        """Search the only available index"""
+        """
+        Search the only available index
         
-        # not necessary to specify the index
-        #indexname = list(self.es.indices.get_alias(index="*").keys())[0]
-        #return self.es.search(index=indexname, **query_args)
+        Combines sematic/vector with full-text search
 
-        return self.es.search(**query_args)
+        refs: 
+        https://www.elastic.co/search-labs/tutorials/search-tutorial/semantic-search/hybrid-search
+        """
+        
+        if 'from_' in query_args:
+            query_args['from'] = query_args['from_']
+            del query_args['from_']
+
+        # Assumes only one index
+        indexname = list(self.es.indices.get_alias(index="*").keys())[0]
+
+        return self.es.perform_request(
+            'GET',
+            f'/{indexname}/_search',
+            body = json.dumps(query_args),
+            headers = {'Content-Type': 'application/json',
+                       'Accept': 'application/json'}
+        )
+
     
     def retrieve_message(self, id):
 
         indexname = list(self.es.indices.get_alias(index="*").keys())[0]
 
+        logging.info(f'Retrieving doc {id}...')
         return self.es.get(index=indexname, id=id)
+    
+
+    def deploy_elser(self):
+        """
+        Vectorize documents when added.
+
+        Model name: .elser_model_2
+
+        Pipeline name: elser-ingest-pipeline
+
+        Pipeline runs on field doctype (tweets/name) and outputs to the elser_embedding field
+        """
+
+        logging.info('Loading elser model...')
+        self.es.ml.put_trained_model(model_id = '.elser_model_2',
+                                     input = {'field_names': ['text_field']})
+        
+        while True:
+            status = self.es.ml.get_trained_models(model_id = '.elser_model_2',
+                                                   include = 'definition_status')
+            if status['trained_model_configs'][0]['fully_defined']:
+                break
+            time.sleep(1) # asynchronous thus sleep
+        
+        logging.info('Deploying elser model...')
+        self.es.ml.start_trained_model_deployment(model_id = '.elser_model_2')
+
+        indexname = list(self.es.indices.get_alias(index="*").keys())[0]
+        if indexname == "isis_docs":
+            doctype = 'tweets'
+        elif indexname == "documents":
+            doctype = 'name'
+        else:
+            pass
+
+        logging.info('Pipe docs through elser model to create embeddings...')
+        self.es.ingest.put_pipeline(id = 'elser-ingest-pipeline',
+                                    processors = [{'inference':
+            {'model_id': '.elser_model_2',
+            'input_output': [{'input_field': doctype,
+                              'output_field': 'elser_embedding'}]}}])
+        
+        logging.info('Elser done!!!')
