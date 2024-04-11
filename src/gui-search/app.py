@@ -26,13 +26,12 @@ def handle_search():
     For combined semantic/vector and full-text search
 
     Refs:
-    - https://www.elastic.co/search-labs/tutorials/search-tutorial/semantic-search/semantic-search
-    - https://www.elastic.co/search-labs/tutorials/search-tutorial/semantic-search/hybrid-search
-    - https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/hybrid-search
+    - https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search
     """
 
     query = request.form.get('query', '')
     from_ = request.form.get('from_', type=int, default=0)
+    search_type = request.form.get('searchType', '')
 
     indexname = list(es.es.indices.get_alias(index="*").keys())[0]
     if indexname == "isis_docs":
@@ -42,17 +41,15 @@ def handle_search():
     else:
         pass
 
-    # combined search
-    search_query = {'sub_searches': [
-                {'query': {'match': {doctype: {'query': query}}}}, # full-text
-                {'query': {'text_expansion': {'elser_embedding': {
+    if search_type == 'full-text':
+        query = {'query': {'match': {doctype: {'query': query}}}}
+        
+    elif search_type == 'vector':
+        query = {'query': {'text_expansion': {'elser_embedding': {
                                             'model_id': '.elser_model_2', # see es.deploy_elser()
-                                            'model_text': query}}}} # vector
-                                    ],
-                'rank': {'rrf': {}}} # combine
+                                            'model_text': query}}}}
 
-    res = es.search(**search_query,
-                    size=5, from_=from_)
+    res = es.search(query=query, size=5, from_=from_, searchtype = search_type)
     
     return render_template('index.html',
                            results = res['hits']['hits'],
