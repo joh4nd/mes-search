@@ -61,8 +61,8 @@ fi
 
 exit 0
 
-# $ docker build --no-cache --progress=plain --rm -t py-peline:0.1.1 -f py.Dockerfile .
-# $ docker run --rm -d -p 8888:8888 --mount type=bind,src=$(pwd)/src/pipeline,dst=/app/src/pipeline --name mes-search-py-peline py-peline:0.1.1
+# $ docker build --no-cache --progress=plain --rm -t py-peline:1.0.0 -f py.Dockerfile .
+# $ docker run --rm -d -p 8888:8888 --mount type=bind,src=$(pwd)/src/pipeline,dst=/app/src/pipeline --name mes-search-py-peline py-peline:1.0.0
 
 # $ docker build --rm -t es-client:1.0.0 -f es.Dockerfile .
 # $ docker run -d -p 9200:9200 --name mes-search-es-client-1 es-client:1.0.0

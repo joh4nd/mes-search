@@ -4,13 +4,20 @@ from elasticsearch import Elasticsearch # https://elasticsearch-py.readthedocs.i
 import time
 import json
 import inspect
+from sentence_transformers import SentenceTransformer
 
 logging.basicConfig(level=logging.INFO)
 
 class Search:
     
     def __init__(self):
-        """connects to Elasticsearch at host.docker.internal"""
+        """
+        Connects to Elasticsearch at host.docker.internal.
+        
+        Loads vector model.
+        """
+
+        self.model = SentenceTransformer('all-MiniLM-L6-v2') # https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/store-embeddings
 
         self.es = Elasticsearch('http://host.docker.internal:9200') # https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/config.html#timeouts
 
@@ -49,26 +56,29 @@ class Search:
         # https://elasticsearch-py.readthedocs.io/en/stable/api/indices.html#elasticsearch.client.IndicesClient.delete
         self.es.indices.delete(index = "_all", ignore_unavailable = True)
         
-        # https://www.elastic.co/search-labs/tutorials/search-tutorial/semantic-search/elser-model
+        # https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/store-embeddings
         self.es.indices.create(index = indexname, mappings = {
-            'properties': {'embedding': {'type': 'dense_vector'}, # vector
-                           'elser_embedding': {'type': 'sparse_vector'}}}, # semantic
-                           settings = {'index': {'default_pipeline': 'elster-ingest-pipeline'}}) # see deploy_elser()
+            'properties': {'embedding': {'type': 'dense_vector'}}})
                 
         self.es.indices.exists(index=indexname, pretty=True, human=True)
         logging.info(f'Recreated {indexname}!')
     
+    def get_embedding(self, text):
+        """Encodes msgs with vector model"""
+        return self.model.encode(text)
+
     def add_documents(self, json_docs=None):
         """
-        Index json documents (a dict of key-value fields) in an index named after themselves.
-        
-        "Fields that have a string value are automatically indexed for full-text and keyword search, but in addition to strings you can use other field types such as numbers, dates and booleans, which are also indexed for efficient operations such as filtering."
+        Index json documents (a dict of key-value fields) with their embeddings in an index named after themselves.
 
         refs:
          - https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-types.html
          - https://elasticsearch-py.readthedocs.io/en/stable/quickstart.html#indexing-documents
+         - https://elasticsearch-py.readthedocs.io/en/stable/api.html#elasticsearch.Elasticsearch.bulk
+         - https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/store-embeddings
         """
 
+        # retrieve passed name of json_docs as index_name
         frame = inspect.currentframe()
         frame = inspect.getouterframes(frame)[1]
         string = inspect.getframeinfo(frame[0]).code_context[0].strip()
@@ -84,40 +94,36 @@ class Search:
 
         self.create_index(index_name)
 
-        #self.es.index(index=index, body=json_docs)
+        # use index_name to set search key
+        if index_name == "isis_docs":
+                doctype = 'tweets'
+        elif index_name == "documents":
+                doctype = 'name'
+        else:
+            pass
 
-        # https://elasticsearch-py.readthedocs.io/en/stable/api.html#elasticsearch.Elasticsearch.bulk
+        # bulk and dict-unpacking adds docs and embeddings
         operations = []
         for doc in json_docs:
             operations.append({'index': {'_index': index_name}})
-            operations.append(doc)        
+            operations.append({**doc,
+                               'embedding': self.get_embedding(doc[doctype])})        
         return self.es.bulk(operations=operations)
 
     def search(self, **query_args):
         """
-        Search the only available index
+        Search msgs in the only available index.
         
-        Combines sematic/vector with full-text search
+        Enables vector search and full-text search.
 
         refs: 
-        https://www.elastic.co/search-labs/tutorials/search-tutorial/semantic-search/hybrid-search
+        - https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/nearest-neighbor-search
         """
-        
-        if 'from_' in query_args:
-            query_args['from'] = query_args['from_']
-            del query_args['from_']
 
         # Assumes only one index
-        indexname = list(self.es.indices.get_alias(index="*").keys())[0]
+        # indexname = list(self.es.indices.get_alias(index="*").keys())[0]
 
-        return self.es.perform_request(
-            'GET',
-            f'/{indexname}/_search',
-            body = json.dumps(query_args),
-            headers = {'Content-Type': 'application/json',
-                       'Accept': 'application/json'}
-        )
-
+        return self.es.search(**query_args)
     
     def retrieve_message(self, id):
 
@@ -127,44 +133,3 @@ class Search:
         return self.es.get(index=indexname, id=id)
     
 
-    def deploy_elser(self):
-        """
-        Vectorize documents when added.
-
-        Model name: .elser_model_2
-
-        Pipeline name: elser-ingest-pipeline
-
-        Pipeline runs on field doctype (tweets/name) and outputs to the elser_embedding field
-        """
-
-        logging.info('Loading elser model...')
-        self.es.ml.put_trained_model(model_id = '.elser_model_2',
-                                     input = {'field_names': ['text_field']})
-        
-        while True:
-            status = self.es.ml.get_trained_models(model_id = '.elser_model_2',
-                                                   include = 'definition_status')
-            if status['trained_model_configs'][0]['fully_defined']:
-                break
-            time.sleep(1) # asynchronous thus sleep
-        
-        logging.info('Deploying elser model...')
-        self.es.ml.start_trained_model_deployment(model_id = '.elser_model_2')
-
-        indexname = list(self.es.indices.get_alias(index="*").keys())[0]
-        if indexname == "isis_docs":
-            doctype = 'tweets'
-        elif indexname == "documents":
-            doctype = 'name'
-        else:
-            pass
-
-        logging.info('Pipe docs through elser model to create embeddings...')
-        self.es.ingest.put_pipeline(id = 'elser-ingest-pipeline',
-                                    processors = [{'inference':
-            {'model_id': '.elser_model_2',
-            'input_output': [{'input_field': doctype,
-                              'output_field': 'elser_embedding'}]}}])
-        
-        logging.info('Elser done!!!')

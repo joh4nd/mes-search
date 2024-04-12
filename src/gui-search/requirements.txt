@@ -1,7 +1,8 @@
 # my requirements
 elasticsearch==8.12.1
 flask-session==0.8.0
-
+torch --index-url https://download.pytorch.org/whl/cpu # install cpu version og torch;to not require gpu version by sentence-transformers
+sentence-transformers==2.6.1
 
 
 #

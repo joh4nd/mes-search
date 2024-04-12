@@ -21,35 +21,45 @@ def index():
 @app.post('/')
 def handle_search():
     """
-    Query docs attributes based on index.
-
-    For combined semantic/vector and full-text search
+    Query msgs in index.
+    
+    Defaults to full-text but can be set to vector search.
 
     Refs:
-    - https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search
+    - https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/nearest-neighbor-search
     """
+    
+    ####################################################
+    ##### must handle searchtype!
+    search_type='full-text'
+    ####################################################
 
     query = request.form.get('query', '')
     from_ = request.form.get('from_', type=int, default=0)
     search_type = request.form.get('searchType', '')
 
-    indexname = list(es.es.indices.get_alias(index="*").keys())[0]
-    if indexname == "isis_docs":
-        doctype = 'tweets'
-    elif indexname == "documents":
-        doctype = 'name'
+    # use index_name to set search key
+    index_name = list(es.es.indices.get_alias(index="*").keys())[0]
+    if index_name == "isis_docs":
+            doctype = 'tweets'
+    elif index_name == "documents":
+            doctype = 'name'
     else:
         pass
 
-    if search_type == 'full-text':
-        query = {'query': {'match': {doctype: {'query': query}}}}
-        
-    elif search_type == 'vector':
-        query = {'query': {'text_expansion': {'elser_embedding': {
-                                            'model_id': '.elser_model_2', # see es.deploy_elser()
-                                            'model_text': query}}}}
+    # embed query in es dll
+    query={'match': {doctype: {'query': query}}}
 
-    res = es.search(query=query, size=5, from_=from_, searchtype = search_type)
+    if search_type == 'full-text':
+        res = es.search(query=query, size=5, from_=from_)
+
+    elif search_type == 'vector':
+        res = es.search(knn={'field': 'embedding',
+                            'query_vector': es.get_embedding(query),
+                            'num_candidates': 50,
+                            'k': 10},
+                        size=5,
+                        from_=from_)
     
     return render_template('index.html',
                            results = res['hits']['hits'],
