@@ -1,10 +1,11 @@
 
 import logging
-from elasticsearch import Elasticsearch # https://elasticsearch-py.readthedocs.io/en/stable/api/indices.html#elasticsearch.client.IndicesClient.exists
+from elasticsearch import Elasticsearch, helpers
 import time
 import json
 import inspect
 from sentence_transformers import SentenceTransformer
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 
@@ -19,7 +20,9 @@ class Search:
 
         self.model = SentenceTransformer('all-MiniLM-L6-v2') # https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/store-embeddings
 
-        self.es = Elasticsearch('http://host.docker.internal:9200') # https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/config.html#timeouts
+        self.es = Elasticsearch('http://host.docker.internal:9200')
+
+        # https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/config.html#timeouts
 
         retries=0
         max_retries=12
@@ -57,8 +60,9 @@ class Search:
         self.es.indices.delete(index = "_all", ignore_unavailable = True)
         
         # https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/store-embeddings
-        self.es.indices.create(index = indexname, mappings = {
-            'properties': {'embedding': {'type': 'dense_vector'}}})
+        # https://www.elastic.co/guide/en/elasticsearch/reference/8.11/dense-vector.html
+        self.es.indices.create(index = indexname, mappings = {'properties': {
+            'embedding': {'type': 'dense_vector'}}}) # ,"index_options": {"type": "int8_hnsw"}
                 
         self.es.indices.exists(index=indexname, pretty=True, human=True)
         logging.info(f'Recreated {indexname}!')
@@ -76,6 +80,8 @@ class Search:
          - https://elasticsearch-py.readthedocs.io/en/stable/quickstart.html#indexing-documents
          - https://elasticsearch-py.readthedocs.io/en/stable/api.html#elasticsearch.Elasticsearch.bulk
          - https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/store-embeddings
+         - https://elasticsearch-py.readthedocs.io/en/v8.12.0/helpers.html
+         - https://www.elastic.co/guide/en/elasticsearch/reference/8.12/docs-bulk.html
         """
 
         # retrieve passed name of json_docs as index_name
@@ -97,18 +103,26 @@ class Search:
         # use index_name to set search key
         if index_name == "isis_docs":
                 doctype = 'tweets'
+                rowindex = 'ID'
         elif index_name == "documents":
                 doctype = 'name'
         else:
             pass
-
-        # bulk and dict-unpacking adds docs and embeddings
-        operations = []
+    
+        # es.bulk() crashes -> refactor to bulk in chunks
+        chunks = []
         for doc in json_docs:
-            operations.append({'index': {'_index': index_name}})
-            operations.append({**doc,
-                               'embedding': self.get_embedding(doc[doctype])})        
-        return self.es.bulk(operations=operations)
+            chunks.append({
+                '_index': index_name,
+                '_id': doc[rowindex],
+                'insert_dt': datetime.now(),
+                '_source': {**doc, 'embedding': self.get_embedding(doc[doctype])}
+            })
+        helpers.bulk(client = self.es, actions = chunks, chunk_size = 500,request_timeout = 60)
+
+        number_of_msgs = int(self.es.cat.count(index=index_name, params = {"format": "json"})[0]["count"])
+
+        logging.info(f'Inserted number of messages: {number_of_msgs}')
 
     def search(self, **query_args):
         """

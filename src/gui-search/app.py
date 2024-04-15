@@ -23,16 +23,11 @@ def handle_search():
     """
     Query msgs in index.
     
-    Defaults to full-text but can be set to vector search.
+    Enable full-text and vector search.
 
     Refs:
     - https://www.elastic.co/search-labs/tutorials/search-tutorial/vector-search/nearest-neighbor-search
     """
-    
-    ####################################################
-    ##### must handle searchtype!
-    search_type='full-text'
-    ####################################################
 
     query = request.form.get('query', '')
     from_ = request.form.get('from_', type=int, default=0)
@@ -47,11 +42,9 @@ def handle_search():
     else:
         pass
 
-    # embed query in es dll
-    query={'match': {doctype: {'query': query}}}
-
-    if search_type == 'full-text':
-        res = es.search(query=query, size=5, from_=from_)
+    if search_type == 'full_text':
+        query_dll={'match': {doctype: {'query': query}}}
+        res = es.search(query=query_dll, size=5, from_=from_)
 
     elif search_type == 'vector':
         res = es.search(knn={'field': 'embedding',
@@ -65,7 +58,8 @@ def handle_search():
                            results = res['hits']['hits'],
                            query = query,
                            from_= from_,
-                           total = res['hits']['total']['value'])
+                           total = res['hits']['total']['value'],
+                           search_type=search_type)
 
 
 @app.get('/message/<id>')

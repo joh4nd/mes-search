@@ -8,9 +8,9 @@
     </div>
     <div class="mb-3">
         <label for="vector">Vector Search</label>
-        <input type="radio" id="vector" name="searchType" value="vector">
-        <label for="full_text">Full Text Search</label>
-        <input type="radio" id="full_text" name="searchType" value="full_text">
+        <input type="radio" id="vector" name="searchType" value="vector" {% if search_type == 'vector' %}checked{% endif %}>
+        <label for="full_text">Full-text Search</label>
+        <input type="radio" id="full_text" name="searchType" value="full_text" {% if search_type != 'vector' %}checked{% endif %}>
     </div>
     <button type="submit" class="btn btn-primary">Search</button>
 </form>
@@ -33,6 +33,8 @@
                 {% endfor %}
                 
             </div>
+
+
             <div class="col-10">
                 <div class="row mb-3">
                     <div class="col-sm-auto my-auto">
@@ -50,6 +52,7 @@
                             <form method="POST">
                                 <input type="hidden" name="query" value="{{ query }}">
                                 <input type="hidden" name="from_" value="{{ from_ + results|length }}">
+                                <input type="hidden" name="searchType" value="{{ search_type }}">
                                 <button type="submit" class="btn btn-primary">Next page →</button>
                             </form>
                         </div>

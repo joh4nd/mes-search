@@ -1,6 +1,6 @@
 services:
   es-client:
-    image: es-client:1.0.0
+    image: es-client:1.1.0
     build:
       context: .
       dockerfile: es.Dockerfile
@@ -9,7 +9,7 @@ services:
 
 
   py-peline:
-    image: py-peline:1.0.0
+    image: py-peline:1.1.0
     build:
       context: . 
       dockerfile: py.Dockerfile
@@ -25,7 +25,7 @@ services:
 
 
   gui-search:
-    image: gui-search:1.0.0
+    image: gui-search:1.1.0
     build:
       context: .
       dockerfile: fl.Dockerfile

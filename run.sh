@@ -28,7 +28,7 @@ if docker container ls | awk '{print $5}' | grep -q jupyter; then
 
     dock_URL="$(grep -P 'http:\/\/127.0.0.1:8888\/tree\?token=[^\s]+$' <<< $dock_jlogs | awk 'NR==2 {print $1}')"
 
-    dock_URLjn="$(echo $dock_URL | sed 's/\/tree/\/notebooks\/src\/pipeline\/search-index.ipynb/')"
+    dock_URLjn="$(echo $dock_URL | sed 's/\/tree/\/notebooks\/search-index.ipynb/')"
 else
     echo No Jupyter container...
 fi
@@ -58,6 +58,28 @@ if [ -z $dock_URLjn ]; then
 else
     my_open_services $dock_URLjn "Jupyter Notebook"
 fi
+
+
+if docker container ls | awk '{print $5}' | grep -q python3; then
+    dock_jcontainer="$(docker container ls | awk '{if(NR>1) print $NF}' | grep py)"
+
+    echo data is being piped and processed to ES... This may take 10 minutes.
+    my_counter=0
+
+    until $(docker logs $dock_jcontainer 2>&1 | grep -q "Inserted number of messages:"); do
+
+        ((my_counter++))
+
+        echo data is being prepared for MES-SEARCH... Waiting 20 seconds. Round $my_counter
+        sleep 20
+
+    done
+
+    echo MES-SEARCH can now be used!
+else
+    echo The data pipeline is not running as it should...
+fi
+
 
 exit 0
 

@@ -3,7 +3,6 @@ elasticsearch==8.12.1
 pandas==2.2.1
 
 # vector search
-torch --index-url https://download.pytorch.org/whl/cpu # install cpu version of torch to not require gpu version by sentence-transformers
 sentence-transformers==2.6.1
 
 # dev

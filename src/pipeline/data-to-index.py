@@ -7,7 +7,9 @@ logging.basicConfig(level=logging.INFO)
 
 isis = pd.read_csv('../../data/tweets.csv', usecols=['username','tweets','time'])
 
-isis_docs = isis.to_dict(orient='records')
+isis.index.name = 'ID'
+
+isis_docs = isis.reset_index().to_dict(orient='records')
 
 es = Search()
 
